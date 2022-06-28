@@ -29,9 +29,11 @@ class BscSetIndicatorsController extends Controller
     {
         $topic_id = 1;
         $username = 'venlm.hgi';
-        $unit_id =  1;
-        $thang = new Carbon('2022-06-23');
-        $nam = new Carbon('2022-06-23');
+        $unit_id =  21;
+        // $thang = new Carbon('2022-06-1');
+        $thang = null;
+
+        $nam = new Carbon('2022-01-1');
 
         $order = [1];
         DB::transaction(function () use ($topic_id, $username, $unit_id, $thang, $nam, $order) {
@@ -43,7 +45,7 @@ class BscSetIndicatorsController extends Controller
                     "month_set" => $thang,
                     "year_set" => $nam,
                     'unit_id' => $unit_id,
-                    'plan' => 5000,
+                    'plan' => 75000,
                     'target_id' => $target->id,
                 ];
                 $setIndicator = BscSetIndicators::create($dtSetIndicator);
@@ -60,7 +62,7 @@ class BscSetIndicatorsController extends Controller
                         "month_set" => $thang,
                         "year_set" => $nam,
                         'unit_id' => $unit_id,
-                        'plan' => 5000,
+                        'plan' => 75000,
                         'target_id' => $childTarget->id,
                     ];
                     $clild = $setIndicator->setIndicators()->create($dtSetIndicator);
@@ -80,12 +82,33 @@ class BscSetIndicatorsController extends Controller
     //thang, năm , unit_id
     public function index(Request $request)
     {
-        //get arr set_indicator
-        $month = new Carbon('2022/06/23');
-        $year = new Carbon('2022/06/01');
-        $mt = $month->format('d-M-y');
-        $yt = $year->format('d-M-y');
-        $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
+        // //get arr set_indicator
+        // $month = new Carbon('2022/06/01');
+        // // $month = new Carbon('2022/06/23');
+        // $year = new Carbon('2022/06/01');
+        // $mt = $month->format('d-M-y');
+        // //get variable in request.
+        // $year = $request->year == null  ? new Carbon('2022/06/01') : $request->year;
+        // $yt = $year->format('d-M-y');
+
+        $unit_id = $request->unit_id == null ? 21 : $request->unit_id;
+        if ($request->month <> 13) {
+            $month = $request->month == null ? Carbon::now()->month : $request->month;
+            $year = $request->year == null ? Carbon::now()->year : $request->year;
+            $monthset = "$year".'-'."$month".'-01';
+            $yearset = "$year".'-'."$month".'-01';
+            $month = new Carbon($monthset);
+            $month->format('d-M-y');
+            $year = new Carbon($yearset);
+            $year->format('d-M-y');
+        } else {
+            // $year = $request->year == null ? (new Carbon::now())->year : $request->year;
+            // $month = null ;
+            // $year =
+        }
+
+
+        $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
         // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
         //get arr topic_id from arr set_indicator.
         $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
@@ -95,20 +118,17 @@ class BscSetIndicatorsController extends Controller
                 $query->select('id', 'target_id', 'topic_id', 'order');
             }
         ])->with([
-            'targets.setindicators' => function ($query) use ($request, $year,  $month) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', 1)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+            'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
+                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unit_id)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
             }
         ])->with([
-            'targets.targets.setindicators' => function ($query) use ($request, $year, $month) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', 1)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+            'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
+                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unit_id)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
             }
         ])->get();
 
         return response()->json([
             'statuscode' => 1,
-            'mt' => $mt,
-            'setin' => $arrSetIndicatorid,
-            'topicarr' => $arrTopicId,
             'topics' => $topics
         ]);
     }

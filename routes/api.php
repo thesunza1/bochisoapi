@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BscController;
 use App\Http\Controllers\BscDetailSetIndicatorsController;
 use App\Http\Controllers\BscSetIndicatorsController;
 use App\Http\Controllers\BscTargetsController;
@@ -57,3 +58,6 @@ Route::middleware('auth:sanctum')->group(function() {
 Route::prefix('user')->group(function () {
     Route::post('/login', [UserController::class, 'login']);
 });
+
+
+Route::post('testdate', [BscController::class, 'testdate']);

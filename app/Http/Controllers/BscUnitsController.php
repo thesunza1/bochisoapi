@@ -10,7 +10,7 @@ class BscUnitsController extends Controller
 {
     //
     public function index(Request $request) {
-        $units = BscUnits::whereNull('unit_id')->with('units')->get();
+        $units = BscUnits::with('units')->get();
 
         return response()->json([
             'statuscode' => 1,

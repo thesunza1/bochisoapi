@@ -7,7 +7,9 @@ use App\Models\BscDetailSetIndicators;
 use App\Models\BscSetIndicators;
 use App\Models\BscTopicOrders;
 use App\Models\BscTopics;
+use App\Models\BscUnits;
 use Carbon\Carbon;
+use Cron\MonthField;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,35 +18,42 @@ class BscDetailSetIndicatorsController extends Controller
     //
     public function index(Request $request)
     {
-        $month = new Carbon('2022/06/23');
-        $year = new Carbon('2022/06/01');
-        $mt = $month->format('d-M-y');
-        $yt = $year->format('d-M-y');
-
-        $now = new Carbon(Carbon::now()->toDateString());
+        $month = now()->firstOfMonth();
+        $month->format('d-M-y');
+        $year = $month;
+        // $month = new Carbon('2022/06/01');
+        // $year = new Carbon('2022/06/01');
+        // $mt = $month->format('d-M-y');
+        // $yt = $year->format('d-M-y');
+        $username = $request->user()->username;
+        if ($request->unit_id <> -1) {
+            $unitId = $request->unit_id;
+        } else {
+            $unitId = 1;
+        }
+        $now = now();
         $n = $now->format('d-M-y');
         $a = 1;
-        $detailSetIndicators = BscSetIndicators::where('unit_id', 1)->whereDate('month_set', $month)
+        $detailSetIndicators = BscSetIndicators::where('unit_id', $unitId)->whereDate('month_set', $month)
             ->whereDate('year_set', $year)->first()->detailSetIndicators()->pluck('id');
         $detailSetIndicators = BscDetailSetIndicators::whereIn('id', $detailSetIndicators)->whereDate('created_at', $now)->pluck('id');
         if ($detailSetIndicators->count() == 0) {
-            $this->create($request);
-            $a = 33;
+            $this->create($username);
         }
-        $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
+        $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unitId)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
         //get arr topic_id from arr set_indicator.
         $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
         //get topic from topic_id array -> with all chitieu.
         $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
-            'targets.setindicators' => function ($query) use ($request, $year,  $month, $now) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', 1)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+            'targets.setindicators' => function ($query) use ($request, $unitId, $year,  $month, $now) {
+                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
                 $query->with(['detailSetIndicators' => function ($query) use ($now) {
                     $query->whereDate('created_at', $now);
                 }]);
             }
         ])->with([
-            'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $now) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', 1)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+            'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $now, $unitId) {
+                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
                 $query->with(['detailSetIndicators' => function ($query) use ($now) {
                     $query->whereDate('created_at', $now);
                 }]);
@@ -56,16 +65,22 @@ class BscDetailSetIndicatorsController extends Controller
             'topics' => $topics,
         ]);
     }
-    public function create(Request $request)
+    public function create($username, $unitId = 1, $month = null)
     {
-        $month = new Carbon('2022/06/23');
-        $year = new Carbon('2022/06/01');
-        $mt = $month->format('d-M-y');
-        $yt = $year->format('d-M-y');
+        if ($month ==  null) {
+            $month = Carbon::now()->firstOfMonth();
+            $month->format('y-M-y');
+        }
+        $year = $month;
+        // $mt = $month->format('d-M-y');
+        // $year = new Carbon('2022/06/01');
+        // $yt = $year->format('d-M-y');
         $now = now();
-        $username = $request->user()->username;
-        DB::transaction(function () use ($month, $year, $now, $username) {
-            $setIndicators = BscSetIndicators::where('unit_id', 1)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->get();
+        // $username = $request->user()->username;
+        DB::transaction(function () use ($month, $year, $now, $username, $unitId) {
+            $setIndicators = BscSetIndicators::where('unit_id', $unitId)
+                ->whereDate('month_set', $month->toDateString())
+                ->whereDate('year_set', $year->toDateString())->get();
             foreach ($setIndicators as $setIndicator) {
                 $setIndicator->detailsetindicators()->create([
                     'username_created' => $username,
@@ -77,9 +92,8 @@ class BscDetailSetIndicatorsController extends Controller
         });
     }
 
-    public function update(Request $request)
+    public function update1(Request $request)
     {
-
         $id = $request->id;
         $username = $request->user()->username;
         $totalPlan = $request->total_plan;
@@ -99,7 +113,10 @@ class BscDetailSetIndicatorsController extends Controller
         $yr = $year->format('d-M-y');
 
         $unitIdSI = $setIndicator->unit_id;
-        $setIndicators = BscSetIndicators::where('unit_id', $unitIdSI)->whereDate('year_set', $year)->whereDate('month_set', $month)->get();
+        $setIndicators = BscSetIndicators::where('unit_id', $unitIdSI)
+            ->whereDate('year_set', $year->toDateString())
+            ->whereDate('month_set', $month->toDateString())
+            ->get();
         $detailSetIndicators = DB::transaction(function () use ($setIndicators) {
             foreach ($setIndicators as $setIndicator) {
                 $plan = 0;
@@ -115,7 +132,85 @@ class BscDetailSetIndicatorsController extends Controller
 
         return response()->json([
             'statuscode' => 1,
-            'detailSetIndicators' => $detailSetIndicators
+            // 'detailSetIndicators' => $detailSetIndicators
         ]);
+    }
+    public function update(Request $request)
+    {
+        $id = $request->id;
+        $username = $request->user()->username;
+        $totalPlan = $request->total_plan;
+        //update row detail detailSetIndicator
+        $data = $this->updateDetail($id, $username, $totalPlan);
+
+        return response()->json([
+            'statuscode' => 1,
+            // 'detailSetIndicators' => $detailSetIndicators
+            'data' => $data,
+        ]);
+    }
+
+    public function updateDetail($id, $username,  $totalPlan)
+    {
+        $detailSetIndicator = BscDetailSetIndicators::find($id);
+        $oldTotalPlan = $detailSetIndicator->total_plan;
+        $detailSetIndicator->total_plan = $totalPlan;
+        $detailSetIndicator->username_updated = $username;
+        $detailSetIndicator->save();
+        //update value for
+        $setIndicator = $detailSetIndicator->setIndicator;
+        $yearSetSI = date('d-M-y', $setIndicator->year_set);
+        $monthSetSI = date('d-M-y', $setIndicator->month_set);
+        $targetId = $setIndicator->target_id;
+        $month = new Carbon($monthSetSI);
+        $year = new Carbon($yearSetSI);
+        $mt = $month->format('d-M-y');
+        $yr = $year->format('d-M-y');
+        $now = Carbon::now();
+        $now->format('d-M-y');
+        //
+        $unitIdSI = $setIndicator->unit_id;
+        $setIndicator = BscSetIndicators::where('unit_id', $unitIdSI)
+            ->whereDate('year_set', $year->toDateString())
+            ->whereDate('month_set', $month->toDateString())
+            ->where('target_id', $targetId)
+            ->first();
+        $detailSetIndicators = DB::transaction(function () use ($setIndicator, $totalPlan) {
+            $setIndicator->total_plan = $totalPlan;
+            $setIndicator->save();
+        });
+
+        // update unit parent =
+        $unitParent = BscUnits::find($unitIdSI)->unit; // 21
+        $targetId = $setIndicator->target_id; // 32
+        if ($unitParent <> null) {
+            $parentUnit_id = $unitParent->id;
+            $mt = $month->format('d-M-y');
+            $yr = $year->format('d-M-y');
+            $parentSetIndicator = BscSetIndicators::where('unit_id', $parentUnit_id)
+                ->where('target_id', $targetId)
+                ->whereDate('month_set', $month->toDateString())
+                ->whereDate('year_set', $year->toDateString())
+                ->first();
+            $parentDetailSetIndicator = $parentSetIndicator
+                ->detailSetIndicators()
+                ->whereDate('created_at', $now)->first();
+            if ($parentDetailSetIndicator == null) {
+                $this->create($username, $parentUnit_id);
+            }
+            $parentSetIndicator = BscSetIndicators::where('unit_id', $parentUnit_id)
+                ->where('target_id', $targetId)
+                ->whereDate('month_set', $month->toDateString())
+                ->whereDate('year_set', $year->toDateString())
+                ->first();
+            $parentDetailSetIndicator = $parentSetIndicator
+                ->detailSetIndicators()
+                ->whereDate('created_at', $now->toDateString())
+                ->first();
+            $parentDetailSetIndicatorId = $parentDetailSetIndicator->id;
+            $parentTotalPlan = $parentDetailSetIndicator->total_plan + $totalPlan - $oldTotalPlan;
+            // return [$parentTotalPlan , $totalPlan, $oldTotalPlan, $parentDetailSetIndicatorId ];
+            $this->updateDetail($parentDetailSetIndicatorId, $username, $parentTotalPlan);
+        }
     }
 }
