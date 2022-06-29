@@ -16,4 +16,8 @@ class BscDetailSetIndicators extends Model
     public function setIndicator() {
         return $this->belongsTo(BscSetIndicators::class, 'set_indicator_id');
     }
+
+    public function userUpdated() {
+        return $this->belongsTo(User::class, 'username_updated');
+    }
 }

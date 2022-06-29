@@ -24,6 +24,10 @@ class BscSetIndicators extends Model
     public function  detailSetIndicators() {
         return $this->hasMany(BscDetailSetIndicators::class, 'set_indicator_id');
     }
+
+    public function  detailSetIndicator() {
+        return $this->hasOne(BscDetailSetIndicators::class, 'set_indicator_id')->orderByDesc('created_at');
+    }
     public function createdUser() {
         return $this->belongsTo(User::class, 'username_created');
     }
