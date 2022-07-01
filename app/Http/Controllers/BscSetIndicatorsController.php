@@ -6,6 +6,7 @@ use App\Models\BscSetIndicators;
 use App\Models\BscTargets;
 use App\Models\BscTopicOrders;
 use App\Models\BscTopics;
+use App\Models\BscUnits;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,11 +30,11 @@ class BscSetIndicatorsController extends Controller
     {
         $topic_id = 1;
         $username = 'venlm.hgi';
-        $unit_id =  21;
-        // $thang = new Carbon('2022-06-1');
-        $thang = null;
+        $unit_id =  1;
+        $thang = new Carbon('2022-07-1');
+        // $thang = null;
 
-        $nam = new Carbon('2022-01-1');
+        $nam = new Carbon('2022-07-1');
 
         $order = [1];
         DB::transaction(function () use ($topic_id, $username, $unit_id, $thang, $nam, $order) {
@@ -90,8 +91,9 @@ class BscSetIndicatorsController extends Controller
         // //get variable in request.
         // $year = $request->year == null  ? new Carbon('2022/06/01') : $request->year;
         // $yt = $year->format('d-M-y');
-
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
         $unit_id = $request->unit_id == null ? 21 : $request->unit_id;
+        $unit = BscUnits::find($unit_id);
         if ($request->month <> 13) {
             $month = $request->month == null ? Carbon::now()->month : $request->month;
             $year = $request->year == null ? Carbon::now()->year : $request->year;
@@ -103,7 +105,7 @@ class BscSetIndicatorsController extends Controller
             $year->format('d-M-y');
 
 
-
+            // return [$month->toDateString(),$year->toDateString()];
             $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
             // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
             //get arr topic_id from arr set_indicator.
@@ -111,19 +113,23 @@ class BscSetIndicatorsController extends Controller
             //get topic from topic_id array -> with all chitieu.
             $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
                 'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at','year_set', 'month_set')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereDate('month_set', $month->toDateString())
-                        ->with(['detailSetIndicator.userUpdated']);
+                        ->with(['detailSetIndicator' => function ($q) {
+                            $q->select('users.name','bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username','updated_at');
+                        }]);
                 }
             ])->with([
                 'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereDate('month_set', $month->toDateString())
-                        ->with(['detailSetIndicator.userUpdated']);
+                        ->with(['detailSetIndicator' => function ($q) {
+                            $q->select('users.name','bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+                        }]);
                 }
             ])->get();
         } else {
@@ -144,19 +150,23 @@ class BscSetIndicatorsController extends Controller
             //get topic from topic_id array -> with all chitieu.
             $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
                 'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereNull('month_set')
-                        ->with(['detailSetIndicator.userUpdated']);
+                        ->with(['detailSetIndicator' => function ($q) {
+                            $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+                        }]);
                 }
             ])->with([
                 'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereNull('month_set')
-                        ->with(['detailSetIndicator.userUpdated']);
+                        ->with(['detailSetIndicator' => function ($q) {
+                            $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+                        }]);
                 }
             ])->get();
         }
@@ -165,7 +175,8 @@ class BscSetIndicatorsController extends Controller
 
         return response()->json([
             'statuscode' => 1,
-            'topics' => $topics
+            'topics' => $topics,
+            'unit' => $unit
         ]);
     }
 }
