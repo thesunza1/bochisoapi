@@ -18,19 +18,29 @@ class UserController extends Controller
                 $token = $user[0]->createToken('plaintext')->plainTextToken;
                 return response()->json([
                     'token' => $token,
+                    'password' => md5($request->password),
                     'user' => $user,
                 ]);
             } else {
                 return response()->json([
                     'statuscode' => 2,
+                    'password' => md5($request->password),
                     'mess' => 'Sai pass'
                 ]);
             }
         } else {
             return response()->json([
                 'statuscode' => 0,
+                'password' => md5($request->password),
                 'mess' => 'user khong ton tai',
             ]);
         }
+    }
+
+    public function index(Request $request)
+    {
+        return response()->json([
+            'user' => $request->user(),
+        ]);
     }
 }

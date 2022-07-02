@@ -26,33 +26,36 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->group(function() {
-    Route::prefix('units')->group(function (){
-        Route::post('/',[BscUnitsController::class, 'index']);
-        Route::post('/create',[BscUnitsController::class, 'create']);
-        Route::post('/update',[BscUnitsController::class, 'update']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::prefix('user')->group(function () {
+        Route::post('', [UserController::class, 'index']);
+    });
+    Route::prefix('units')->group(function () {
+        Route::post('/', [BscUnitsController::class, 'index']);
+        Route::post('/create', [BscUnitsController::class, 'create']);
+        Route::post('/update', [BscUnitsController::class, 'update']);
     });
     Route::prefix('topics')->group(function () {
         //topics/create
-        Route::post('/create',[BscTopicsController::class, 'create']);
-        Route::post('/update',[BscTopicsController::class, 'update']);
-        Route::post('/',[BscTopicsController::class, 'index']);
+        Route::post('/create', [BscTopicsController::class, 'create']);
+        Route::post('/update', [BscTopicsController::class, 'update']);
+        Route::post('/', [BscTopicsController::class, 'index']);
     });
     Route::prefix('targets')->group(function () {
-        Route::post('getwitharrtopic',[BscTargetsController::class, 'getWithArrTopic']);
-        Route::post('createwithtopic',[BscTargetsController::class, 'createWithTopic']);
-        Route::post('createwiththis',[BscTargetsController::class, 'createWithThis']);
-        Route::post('getwithtopic',[BscTargetsController::class, 'getWithTopic']);
-        Route::post('update',[BscTargetsController::class, 'update']);
-        Route::post('',[BscTargetsController::class, 'index']);
+        Route::post('getwitharrtopic', [BscTargetsController::class, 'getWithArrTopic']);
+        Route::post('createwithtopic', [BscTargetsController::class, 'createWithTopic']);
+        Route::post('createwiththis', [BscTargetsController::class, 'createWithThis']);
+        Route::post('getwithtopic', [BscTargetsController::class, 'getWithTopic']);
+        Route::post('update', [BscTargetsController::class, 'update']);
+        Route::post('', [BscTargetsController::class, 'index']);
     });
     Route::prefix('setindicators')->group(function () {
-        Route::post('fastcreate',[BscSetIndicatorsController::class, 'fastCreate']);
-        Route::post('',[BscSetIndicatorsController::class, 'index']);
+        Route::post('fastcreate', [BscSetIndicatorsController::class, 'fastCreate']);
+        Route::post('', [BscSetIndicatorsController::class, 'index']);
     });
     Route::prefix('detailsetindicators')->group(function () {
-        Route::post('',[BscDetailSetIndicatorsController::class, 'index']);
-        Route::post('update',[BscDetailSetIndicatorsController::class, 'update']);
+        Route::post('', [BscDetailSetIndicatorsController::class, 'index']);
+        Route::post('update', [BscDetailSetIndicatorsController::class, 'update']);
     });
 });
 Route::prefix('user')->group(function () {
