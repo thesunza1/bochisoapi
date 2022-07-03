@@ -91,6 +91,8 @@ class BscSetIndicatorsController extends Controller
         // //get variable in request.
         // $year = $request->year == null  ? new Carbon('2022/06/01') : $request->year;
         // $yt = $year->format('d-M-y');
+        $arrUnitId = $request->user()->userUnits->pluck('unit_id');
+        $units = BscUnits::whereIn('id', $arrUnitId)?->get();
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         $unit_id = $request->unit_id == null ? 21 : $request->unit_id;
         $unit = BscUnits::find($unit_id);
@@ -111,9 +113,16 @@ class BscSetIndicatorsController extends Controller
             //get arr topic_id from arr set_indicator.
             $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
             //get topic from topic_id array -> with all chitieu.
-            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
+            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            ->with(['targets.targetUpdates' => function ($q) use($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with(['targets.targets.targetUpdates' => function ($q) use($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with([
                 'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at','year_set', 'month_set')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at','year_set', 'month_set', 'min_warning')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereDate('month_set', $month->toDateString())
@@ -123,7 +132,7 @@ class BscSetIndicatorsController extends Controller
                 }
             ])->with([
                 'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set', 'min_warning')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereDate('month_set', $month->toDateString())
@@ -148,9 +157,16 @@ class BscSetIndicatorsController extends Controller
             //get arr topic_id from arr set_indicator.
             $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
             //get topic from topic_id array -> with all chitieu.
-            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
+            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            ->with(['targets.targets.targetUpdates' => function ($q) use($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with(['targets.targetUpdates' => function ($q) use($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with([
                 'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set', 'min_warning')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereNull('month_set')
@@ -160,7 +176,7 @@ class BscSetIndicatorsController extends Controller
                 }
             ])->with([
                 'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
-                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set')
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning','updated_at','year_set', 'month_set', 'min_warning')
                         ->where('unit_id', $unit_id)
                         ->whereDate('year_set', $year->toDateString())
                         ->whereNull('month_set')

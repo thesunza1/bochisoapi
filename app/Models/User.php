@@ -74,6 +74,8 @@ class User extends  Authenticatable
     public function createdSetIndicators() {
         return $this->hasMany( BscSetIndicators::class, 'username_created','username' );
     }
-
+    public function userUnits() {
+        return $this->hasMany( BscUserUnits::class, 'username');
+    }
 
 }

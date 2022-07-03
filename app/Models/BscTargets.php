@@ -32,4 +32,7 @@ class BscTargets extends Model
     public function  setIndicators() {
         return $this->hasMany(BscSetIndicators::class, 'target_id');
     }
+    public function  TargetUpdates() {
+        return $this->hasMany(BscTargetUpdates::class, 'target_id');
+    }
 }

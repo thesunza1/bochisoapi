@@ -32,4 +32,8 @@ class BscUnits extends Model
     public function targets() {
         return $this->hasMany(BscTargets::class, 'unit_id');
     }
+
+    public function userUnits() {
+        return $this->hasMany(BscTargetUpdates::class, 'username');
+    }
 }
