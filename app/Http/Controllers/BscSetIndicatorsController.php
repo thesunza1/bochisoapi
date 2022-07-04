@@ -91,10 +91,16 @@ class BscSetIndicatorsController extends Controller
         // //get variable in request.
         // $year = $request->year == null  ? new Carbon('2022/06/01') : $request->year;
         // $yt = $year->format('d-M-y');
+
         $arrUnitId = $request->user()->userUnits->pluck('unit_id');
         $units = BscUnits::whereIn('id', $arrUnitId)?->get();
+        if(  $arrUnitId == null || $arrUnitId->count() == 0 ) {
+            return response()->json([
+                'statuscode' => 0,
+            ]);
+        }
         date_default_timezone_set('Asia/Ho_Chi_Minh');
-        $unit_id = $request->unit_id == null ? 21 : $request->unit_id;
+        $unit_id = $request->unit_id == null ? $units[0]->id : $request->unit_id;
         $unit = BscUnits::find($unit_id);
         if ($request->month <> 13) {
             $month = $request->month == null ? Carbon::now()->month : $request->month;
@@ -192,7 +198,7 @@ class BscSetIndicatorsController extends Controller
         return response()->json([
             'statuscode' => 1,
             'topics' => $topics,
-            'unit' => $unit
+            'unit' => $unit,
         ]);
     }
 }

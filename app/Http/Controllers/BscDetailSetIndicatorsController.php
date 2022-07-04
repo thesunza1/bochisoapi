@@ -48,26 +48,33 @@ class BscDetailSetIndicatorsController extends Controller
         //get arr topic_id from arr set_indicator.
         $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
         //get topic from topic_id array -> with all chitieu.
-        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->with([
-            'targets.setindicators' => function ($query) use ($request, $unitId, $year,  $month, $now) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
-                $query->with(['detailSetIndicators' => function ($query) use ($now) {
-                    $query->whereDate('created_at', $now);
-                }]);
-            }
-        ])->with([
-            'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $now, $unitId) {
-                $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
-                $query->with(['detailSetIndicators' => function ($query) use ($now) {
-                    $query->whereDate('created_at', $now);
-                }]);
-            }
-        ])->get();
+        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with(['targets.targetUpdates' => function ($q) use($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with([
+                'targets.setindicators' => function ($query) use ($request, $unitId, $year,  $month, $now) {
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+                    $query->with(['detailSetIndicators' => function ($query) use ($now) {
+                        $query->whereDate('created_at', $now);
+                    }]);
+                }
+            ])->with([
+                'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $now, $unitId) {
+                    $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+                    $query->with(['detailSetIndicators' => function ($query) use ($now) {
+                        $query->whereDate('created_at', $now);
+                    }]);
+                }
+            ])->get();
         return response()->json([
             'statuscode' => 1,
             'detailSetIndicators' => $detailSetIndicators,
             'topics' => $topics,
-            'unit' =>$unit,
+            'unit' => $unit,
         ]);
     }
     public function create($username, $unitId = 1, $month = null)

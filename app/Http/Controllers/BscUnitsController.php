@@ -15,7 +15,8 @@ class BscUnitsController extends Controller
 
         return response()->json([
             'statuscode' => 1,
-            'units' => $units
+            'units' => $units,
+            'unitid' => $arrUnitId,
         ]);
     }
     public function create(Request $request) {
