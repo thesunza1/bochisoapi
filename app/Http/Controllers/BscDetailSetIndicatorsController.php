@@ -271,6 +271,9 @@ class BscDetailSetIndicatorsController extends Controller
         $detailSetIndicator->save();
         //update value for
         $setIndicator = $detailSetIndicator->setIndicator;
+        if($setIndicator->month_set ==  null) {
+            return 1;
+        }
         $yearSetSI = date('d-M-y', $setIndicator->year_set);
         $monthSetSI = date('d-M-y', $setIndicator->month_set);
         $targetId = $setIndicator->target_id;
@@ -292,6 +295,7 @@ class BscDetailSetIndicatorsController extends Controller
             $setIndicator->total_plan = $totalPlan;
             $setIndicator->save();
         });
+
         $isUpdate = $setIndicator->is_update;
         $isChildUpdate = $setIndicator->is_child_update;
         if ($isUpdate == 1) {
