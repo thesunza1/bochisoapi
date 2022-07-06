@@ -12,7 +12,6 @@ use Carbon\Carbon;
 use Cron\MonthField;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use SebastianBergmann\CodeCoverage\Report\Xml\Unit;
 
 class BscDetailSetIndicatorsController extends Controller
 {
@@ -31,7 +30,16 @@ class BscDetailSetIndicatorsController extends Controller
         if ($request->unit_id !== -1 && $request->unit_id !== null) {
             $unitId = $request->unit_id;
         } else {
-            $unitId = 1;
+            // $unitId = 1;
+            $unitIdArr = BscUnitsController::getUnitArr($request);
+            if($unitIdArr->count() == 0) {
+                return response()->json(['statuscode' => 0]);
+            }
+            $unitId = $unitIdArr[0];
+        }
+
+        if($request->year_plan == 1) {
+            return $this->index_year($request, $unitId);
         }
         $unit = BscUnits::find($unitId);
         $now = Carbon::now();
@@ -42,7 +50,7 @@ class BscDetailSetIndicatorsController extends Controller
             ->whereDate('year_set', $year->toDateString())->first()->detailSetIndicators()->pluck('id');
         $detailSetIndicators = BscDetailSetIndicators::whereIn('id', $detailSetIndicators)->whereDate('created_at', $now)->pluck('id');
         if ($detailSetIndicators->count() == 0) {
-            $this->create($username);
+            $this->create($username, $unitId);
         }
         $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unitId)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
         //get arr topic_id from arr set_indicator.
@@ -52,7 +60,7 @@ class BscDetailSetIndicatorsController extends Controller
             ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
                 $q->where('username', $request->user()->username);
             }])
-            ->with(['targets.targetUpdates' => function ($q) use($request) {
+            ->with(['targets.targetUpdates' => function ($q) use ($request) {
                 $q->where('username', $request->user()->username);
             }])
             ->with([
@@ -65,6 +73,74 @@ class BscDetailSetIndicatorsController extends Controller
             ])->with([
                 'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $now, $unitId) {
                     $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan')->where('unit_id', $unitId)->whereDate('year_set', $year->toDateString())->whereDate('month_set', $month->toDateString());
+                    $query->with(['detailSetIndicators' => function ($query) use ($now) {
+                        $query->whereDate('created_at', $now);
+                    }]);
+                }
+            ])->get();
+        return response()->json([
+            'statuscode' => 1,
+            'detailSetIndicators' => $detailSetIndicators,
+            'topics' => $topics,
+            'unit' => $unit,
+        ]);
+    }
+    public function index_year(Request $request,  $uuId )
+    {
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
+        $year = Carbon::now()->year;
+        $year = new Carbon('01/01/'.$year);
+        $year->format('d-M-y');
+
+        $username = $request->user()->username;
+        $unitId = $uuId;
+        $unit = BscUnits::find($unitId);
+        $now = Carbon::now();
+        $n = $now->format('d-M-y');
+        $a = 1;
+        // return [$month->toDateString(),  $year->toDateString(), $unitId , $now];
+        $detailSetIndicators = BscSetIndicators::where('unit_id', $unitId)
+        ->whereNull('month_set')
+        ->whereDate('year_set', $year->toDateString())
+        ->first()->detailSetIndicators()->pluck('id');
+        $detailSetIndicators = BscDetailSetIndicators::whereIn('id', $detailSetIndicators)
+        ->whereDate('created_at', $now)
+        ->pluck('id');
+        if ($detailSetIndicators->count() == 0) {
+            $this->createYear($username, $unitId, $year);
+        }
+        $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unitId)
+        ->whereNull('month_set')
+        ->whereDate('year_set', $year->toDateString())
+        ->pluck('id');
+        //get arr topic_id from arr set_indicator.
+        $arrTopicId =  BscTopicOrders::select('topic_id')
+        ->whereIn('set_indicator_id', $arrSetIndicatorid)
+        ->distinct()->pluck('topic_id');
+        //get topic from topic_id array -> with all chitieu.
+        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with(['targets.targetUpdates' => function ($q) use ($request) {
+                $q->where('username', $request->user()->username);
+            }])
+            ->with([
+                'targets.setindicators' => function ($query) use ($request, $unitId, $year, $now) {
+                    $query
+                    ->where('unit_id', $unitId)
+                    ->whereDate('year_set', $year->toDateString())
+                    ->whereNull('month_set');
+                    $query->with(['detailSetIndicators' => function ($query) use ($now) {
+                        $query->whereDate('created_at', $now);
+                    }]);
+                }
+            ])->with([
+                'targets.targets.setindicators' => function ($query) use ($request, $year, $now, $unitId) {
+                    $query
+                    ->where('unit_id', $unitId)
+                    ->whereDate('year_set', $year->toDateString())
+                    ->whereNull('month_set');
                     $query->with(['detailSetIndicators' => function ($query) use ($now) {
                         $query->whereDate('created_at', $now);
                     }]);
@@ -93,6 +169,28 @@ class BscDetailSetIndicatorsController extends Controller
         DB::transaction(function () use ($month, $year, $now, $username, $unitId) {
             $setIndicators = BscSetIndicators::where('unit_id', $unitId)
                 ->whereDate('month_set', $month->toDateString())
+                ->whereDate('year_set', $year->toDateString())->get();
+            foreach ($setIndicators as $setIndicator) {
+                $setIndicator->detailsetindicators()->create([
+                    'username_created' => $username,
+                    'total_plan' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        });
+    }
+    public function createYear($username, $unitId = 1, $year = null )
+    {
+        date_default_timezone_set('Asia/Ho_Chi_Minh');
+        // $mt = $month->format('d-M-y');
+        // $year = new Carbon('2022/06/01');
+        // $yt = $year->format('d-M-y');
+        $now = now();
+        // $username = $request->user()->username;
+        DB::transaction(function () use ( $year, $now, $username, $unitId) {
+            $setIndicators = BscSetIndicators::where('unit_id', $unitId)
+                ->whereNull('month_set')
                 ->whereDate('year_set', $year->toDateString())->get();
             foreach ($setIndicators as $setIndicator) {
                 $setIndicator->detailsetindicators()->create([

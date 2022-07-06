@@ -50,4 +50,11 @@ class BscUnitsController extends Controller
         return response()->json($unit, 200);
 
     }
+
+
+    public static function getUnitArr(Request $request) {
+        $unitArr = $request->user()->userUnits->pluck('unit_id');
+
+        return $unitArr;
+    }
 }
