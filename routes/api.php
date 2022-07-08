@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('setindicators')->group(function () {
         Route::post('fastcreate', [BscSetIndicatorsController::class, 'fastCreate']);
         Route::post('', [BscSetIndicatorsController::class, 'index']);
-        Route::post('createwitharr', [BscSetIndicatorsController::class], 'ooo');
+        Route::post('createwitharr', [BscSetIndicatorsController::class, 'createWithTopicArr'] );
     });
     Route::prefix('detailsetindicators')->group(function () {
         Route::post('', [BscDetailSetIndicatorsController::class, 'index']);

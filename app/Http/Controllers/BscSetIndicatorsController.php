@@ -28,82 +28,77 @@ class BscSetIndicatorsController extends Controller
     }
 
 
-    public function ooo(Request $request) {
-        return response()->json(['oooo' => 32]);
+    //create with topic id arr, month , year,  unitId,
+    public function createWithTopicArr(Request $request)
+    {
+        // $topicIdArr = $request->topic_id_arr;
+        $month = $request->month;
+        $year = $request->year;
+        $unit_id = $request->unitId;
+        $check = BscSetIndicatorsController::checkCreate($month, $year, $unit_id, '');
+        return response()->json([
+            'check' => $check,
+        ]);
     }
-    // //create with topic id arr, month , year,  unitId,
-    // public function createWithTopicArr(Request $request)
-    // {
-    //     // $topicIdArr = $request->topic_id_arr;
-    //     $month = $request->month;
-    //     $year = $request->year;
-    //     $unit_id = $request->unitId;
-    //     return [$month, $year , $unit_id];
-    //     $check = BscSetIndicatorsController::checkCreate($month, $year, $unit_id, '');
-    //     return response()->json([
-    //         'check' => $check,
-    //     ]);
-    // }
 
+    public static function checkCreate($month, $year, $unitId, $username = '')
+    {
+        if ($month == null) {
+            $yearSet = new Carbon('01/01/' . $year);
+            $yearSet->format('d-M-y');
+            $yearSetNum = BscSetIndicators::whereNull('month_set')
+                ->whereDate('year_set', $yearSet->toDateString())
+                ->where('unit_id', $unitId)
+                ->get()->count();
+            if ($yearSetNum > 0) {
+                return 0; // bộ chỉ số năm đã tồn tại
+            } else {
+                $parentUnitId = BscUnits::find($unitId)->unit?->id;
+                if ($parentUnitId == null) {
+                    return 1;
+                } else {
+                    $yearSetNum = BscSetIndicators::whereNull('month_set')
+                        ->whereDate('year_set', $yearSet->toDateString())
+                        ->where('unit_id', $parentUnitId)
+                        ->get()->count();
+                    if ($yearSetNum == 0) return 2; //bộ chỉ số năm cha chưa tạo
+                    return 1;
+                }
+            }
+        } else {
+            $monthSet = new Carbon($month.'/01'.'/'.$year);
+            $yearSet = new Carbon($month.'/01'.'/'.$year);
+            $monthSet->format('d-M-y');
+            $yearSet->format('d-M-y');
+            $checkYearSet = BscSetIndicatorsController::checkCreate(null, $year, $unitId, $username);
+            if ($checkYearSet == 0) {
+                $monthSetNum = BscSetIndicators::whereDate('month_set', $monthSet->toDateString())
+                    ->whereDate('year_set', $yearSet->toDateString())
+                    ->where('unit_id', $unitId)
+                    ->get()->count();
 
-    // public static function checkCreate($month, $year, $unitId, $username = '')
-    // {
-    //     if ($month == null) {
-    //         $yearSet = new Carbon('01/01/' . $year);
-    //         $yearSet->format('d-M-y');
-    //         $yearSetNum = BscSetIndicators::whereNull('month_set')
-    //             ->whereDate('year_set', $yearSet->toDateString())
-    //             ->where('unit_id', $unitId)
-    //             ->get()->count();
-    //         if ($yearSetNum == 1) {
-    //             return 0; // bộ chỉ số năm đã tồn tại
-    //         } else {
-    //             $parentUnitId = BscUnits::find($unitId)->unit?->id;
-    //             if ($parentUnitId == null) {
-    //                 return 1;
-    //             } else {
-    //                 $yearSetNum = BscSetIndicators::whereNull('month_set')
-    //                     ->whereDate('year_set', $yearSet->toDateString())
-    //                     ->where('unit_id', $parentUnitId)
-    //                     ->get()->count();
-    //                 if ($yearSetNum == 0) return 2; //bộ chỉ số năm cha chưa tạo
-    //                 return 1;
-    //             }
-    //         }
-    //     } else {
-    //         $monthSet = new Carbon('01/' . $month . '/' . $year);
-    //         $yearSet = new Carbon('01/' . $month . '/' . $year);
-    //         $monthSet->format('d-M-y');
-    //         $yearSet->format('d-M-y');
+                if ($monthSetNum == 0) {
+                    $parentUnitId = BscUnits::find($unitId)->unit?->id;
+                    if ($parentUnitId == null) {
+                        return 1;
+                    } else {
+                        $parentSetNum = BscSetIndicators::whereDate('month_set',  $monthSet->toDateString())
+                            ->whereDate('year_set', $yearSet->toDateString())
+                            ->where('unit_id', $parentUnitId)
+                            ->get()->count();
+                        if ($parentSetNum == 0) return 4; //bộ chỉ số thang cha chưa tạo
+                        return 1;
+                    }
+                } else {
+                    return 3; //bo chỉ số tháng đã có
+                }
+            } else {
+                return $checkYearSet;
+            }
+        }
 
-    //         $checkYearSet = BscSetIndicatorsController::checkCreate(null, $year, $unitId, $username);
-    //         if ($checkYearSet == 1) {
-    //             $monthSetNum = BscSetIndicators::whereDate('month_set', $monthSet->toDateString())
-    //                 ->whereDate('year_set', $yearSet->toDateString())
-    //                 ->where('unit_id', $unitId)
-    //                 ->get()->count();
-    //             if ($monthSetNum == 0) {
-    //                 $parentUnitId = BscUnits::find($unitId)->unit?->id;
-    //                 if ($parentUnitId == null) {
-    //                     return 1;
-    //                 } else {
-    //                     $yearSetNum = BscSetIndicators::whereDate('month_set',  $monthSet->toDateString())
-    //                         ->whereDate('year_set', $yearSet->toDateString())
-    //                         ->where('unit_id', $parentUnitId)
-    //                         ->get()->count();
-    //                     if ($yearSetNum == 0) return 2; //bộ chỉ số năm cha chưa tạo
-    //                     return 1;
-    //                 }
-    //             } else {
-    //                 return 3; //bo chỉ số tháng đã có
-    //             }
-    //         } else {
-    //             return $checkYearSet;
-    //         }
-    //     }
-
-    //     return 1000;
-    // }
+        return 1000;
+    }
 
     //crete with copy from old month.
     public function createWithCopy(Request $request)
