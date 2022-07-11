@@ -27,20 +27,129 @@ class BscSetIndicatorsController extends Controller
         //add bcs with bcs with id taget,
     }
 
-
+    public function update( Request $request) {
+        $plan = BscSetIndicators::find($request->id);
+        $plan->plan = $request->plan;
+        $plan->save();
+        return response()->json(['statuscode' => 1 ]);
+    }
     //create with topic id arr, month , year,  unitId,
     public function createWithTopicArr(Request $request)
     {
-        // $topicIdArr = $request->topic_id_arr;
+        $topicIdArr = explode(',', $request->topic_id_arr);
+        $username = $request->user()->username;
         $month = $request->month;
         $year = $request->year;
         $unit_id = $request->unitId;
-        $check = BscSetIndicatorsController::checkCreate($month, $year, $unit_id, '');
-        return response()->json([
-            'check' => $check,
-        ]);
-    }
+        $check = BscSetIndicatorsController::checkCreate($month, $year, $unit_id, $username);
+        $order = [];
 
+        if ($check <> 1) {
+            return response()->json([
+                'statuscode' => $check,
+            ]);
+        }
+        for ($i = 1; $i <=  count($topicIdArr); $i++) {
+            array_push($order, $i);
+        }
+        if ($month == null) {
+            $monthSet = null;
+            $yearSet = new Carbon('01-01-' . $year);
+            $yearSet->format('d-M-y');
+            for ($i = 0; $i < count($topicIdArr); $i++) {
+                $topic_id = $topicIdArr[$i];
+                $orderNum = $order[$i];
+                DB::transaction(function () use ($topic_id, $username, $unit_id, $yearSet, $orderNum) {
+                    //topic width tagert
+                    $targets = BscTargets::where('topic_id', $topic_id)->get();
+                    if ($targets->count() == 0) return 'oooo';
+                    foreach ($targets as $target) {
+                        $dtSetIndicator = [
+                            "username_created" => $username,
+                            "month_set" => null,
+                            "year_set" => $yearSet,
+                            'unit_id' => $unit_id,
+                            'plan' => 0,
+                            'target_id' => $target->id,
+                        ];
+                        $setIndicator = BscSetIndicators::create($dtSetIndicator);
+
+                        BscTopicOrders::create([
+                            'name' => $orderNum,
+                            'set_indicator_id' => $setIndicator->id,
+                            'topic_id' => $topic_id
+                        ]);
+
+                        foreach ($target->targets as $childTarget) {
+                            $dtSetIndicator = [
+                                "username_created" => $username,
+                                "month_set" => null,
+                                "year_set" => $yearSet,
+                                'unit_id' => $unit_id,
+                                'plan' => 0,
+                                'target_id' => $childTarget->id,
+                            ];
+                            $clild = $setIndicator->setIndicators()->create($dtSetIndicator);
+                            BscTopicOrders::create([
+                                'name' => $orderNum,
+                                'set_indicator_id' => $clild->id,
+                                'topic_id' => $topic_id,
+                            ]);
+                        }
+                    }
+                });
+            };
+        } else {
+            $monthSet = new Carbon('01-' . $month . '-' . $year);
+            $yearSet = new Carbon('01-' . $month . '-' . $year);
+            $monthSet->format('d-M-y');
+            $yearSet->format('d-M-y');
+            for ($i = 0; $i < count($topicIdArr); $i++) {
+                $topic_id = $topicIdArr[$i];
+                $orderNum = $order[$i];
+                DB::transaction(function () use ($topic_id, $username, $unit_id, $monthSet, $yearSet, $orderNum) {
+                    //topic width tagert
+                    $targets = BscTargets::where('topic_id', $topic_id)->get();
+                    if ($targets->count() == 0) return 'oooo';
+                    foreach ($targets as $target) {
+                        $dtSetIndicator = [
+                            "username_created" => $username,
+                            "month_set" => $monthSet,
+                            "year_set" => $yearSet,
+                            'unit_id' => $unit_id,
+                            'plan' => 0,
+                            'target_id' => $target->id,
+                        ];
+                        $setIndicator = BscSetIndicators::create($dtSetIndicator);
+
+                        BscTopicOrders::create([
+                            'name' => $orderNum,
+                            'set_indicator_id' => $setIndicator->id,
+                            'topic_id' => $topic_id
+                        ]);
+
+                        foreach ($target->targets as $childTarget) {
+                            $dtSetIndicator = [
+                                "username_created" => $username,
+                                "month_set" => $monthSet,
+                                "year_set" => $yearSet,
+                                'unit_id' => $unit_id,
+                                'plan' => 0,
+                                'target_id' => $childTarget->id,
+                            ];
+                            $clild = $setIndicator->setIndicators()->create($dtSetIndicator);
+                            BscTopicOrders::create([
+                                'name' => $orderNum,
+                                'set_indicator_id' => $clild->id,
+                                'topic_id' => $topic_id,
+                            ]);
+                        }
+                    }
+                });
+            };
+        }
+        return response()->json(['statuscode' => 1]);
+    }
     public static function checkCreate($month, $year, $unitId, $username = '')
     {
         if ($month == null) {
@@ -66,8 +175,8 @@ class BscSetIndicatorsController extends Controller
                 }
             }
         } else {
-            $monthSet = new Carbon($month.'/01'.'/'.$year);
-            $yearSet = new Carbon($month.'/01'.'/'.$year);
+            $monthSet = new Carbon($month . '/01' . '/' . $year);
+            $yearSet = new Carbon($month . '/01' . '/' . $year);
             $monthSet->format('d-M-y');
             $yearSet->format('d-M-y');
             $checkYearSet = BscSetIndicatorsController::checkCreate(null, $year, $unitId, $username);
@@ -76,7 +185,6 @@ class BscSetIndicatorsController extends Controller
                     ->whereDate('year_set', $yearSet->toDateString())
                     ->where('unit_id', $unitId)
                     ->get()->count();
-
                 if ($monthSetNum == 0) {
                     $parentUnitId = BscUnits::find($unitId)->unit?->id;
                     if ($parentUnitId == null) {
@@ -93,7 +201,7 @@ class BscSetIndicatorsController extends Controller
                     return 3; //bo chỉ số tháng đã có
                 }
             } else {
-                return $checkYearSet;
+                return $checkYearSet == 1 ? 5 : $checkYearSet ;
             }
         }
 
