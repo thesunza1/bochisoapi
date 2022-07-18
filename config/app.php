@@ -214,4 +214,6 @@ return [
         // 'ExampleClass' => App\Example\ExampleClass::class,
     ])->toArray(),
 
+    'log' => 'single',
+    'log_max_files' => 30,
 ];
