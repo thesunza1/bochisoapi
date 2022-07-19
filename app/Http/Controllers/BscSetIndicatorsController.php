@@ -306,7 +306,7 @@ class BscSetIndicatorsController extends Controller
             //get arr topic_id from arr set_indicator.
             $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
             //get topic from topic_id array -> with all chitieu.
-            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
                 ->with(['targets.targetUpdates' => function ($q) use ($request) {
                     $q->where('username', $request->user()->username);
                 }])
@@ -350,7 +350,7 @@ class BscSetIndicatorsController extends Controller
             //get arr topic_id from arr set_indicator.
             $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
             //get topic from topic_id array -> with all chitieu.
-            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
                 ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
                     $q->where('username', $request->user()->username);
                 }])

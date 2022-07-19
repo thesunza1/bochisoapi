@@ -11,7 +11,7 @@ class BscTopicsController extends Controller
     //
     public function index()
     {
-        $topics = BscTopics::where('id','>',0)->orderByDesc('id')->with('createdUser')->get();
+        $topics = BscTopics::where('id','>',0)->orderBy('id')->with('createdUser')->get();
         return response([
             'statuscode' => 1 ,
             'topics' => $topics,

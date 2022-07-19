@@ -9,9 +9,10 @@ use Illuminate\Support\Facades\Redis;
 class BscUnitsController extends Controller
 {
     //
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         $arrUnitId = $request->user()->userUnits->pluck('unit_id');
-        $units = BscUnits::whereIn('id', $arrUnitId)?->get();
+        $units = BscUnits::whereIn('id', $arrUnitId)?->orderBy('id')->get();
 
         return response()->json([
             'statuscode' => 1,
@@ -19,7 +20,9 @@ class BscUnitsController extends Controller
             'unitid' => $arrUnitId,
         ]);
     }
-    public function create(Request $request) {
+
+    public function create(Request $request)
+    {
         $now = now();
         $data = [
             'username_created' => $request->user()->username,
@@ -34,9 +37,9 @@ class BscUnitsController extends Controller
             'statuscode' => 1,
             'unit' => $unit,
         ], 200);
-
     }
-    public function update(Request $request) {
+    public function update(Request $request)
+    {
         $now = now();
         $data = [
             'username_update' => $request->user()->username,
@@ -48,11 +51,11 @@ class BscUnitsController extends Controller
         $unit = BscUnits::create($data);
 
         return response()->json($unit, 200);
-
     }
 
 
-    public static function getUnitArr(Request $request) {
+    public static function getUnitArr(Request $request)
+    {
         $unitArr = $request->user()->userUnits->pluck('unit_id');
 
         return $unitArr;
