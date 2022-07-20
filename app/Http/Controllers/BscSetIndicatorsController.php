@@ -31,6 +31,24 @@ class BscSetIndicatorsController extends Controller
         $plan = BscSetIndicators::find($request->id);
         $plan->plan = $request->plan;
         $plan->save();
+        if($plan->month_set == null) {
+            $year = new Carbon($plan->year_set);
+            $year->format('d-M-y');
+            $year->year;
+            $month = now()->month;
+            $unit_id= $plan->unit_id;
+            for($i=1; $i <= $month; $i++  ) {
+                $yearSet = new Carbon('01-'.$i.'-'.$year);
+                $sis = BscSetIndicators::whereDate('year_set', $yearSet->toDateString())->where('unit_id', $unit_id )->get();
+                if($sis->count() > 0) {
+                    foreach($sis as $si) {
+                        $si->year_plan = $request->plan ;
+                        $si->save();
+                    }
+                }
+            }
+
+        }
         return response()->json(['statuscode' => 1 ]);
     }
     //create with topic id arr, month , year,  unitId,
