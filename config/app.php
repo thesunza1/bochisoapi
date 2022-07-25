@@ -215,5 +215,5 @@ return [
     ])->toArray(),
 
     'log' => 'single',
-    'log_max_files' => 1000,
+    'log_max_files' => 10,
 ];
