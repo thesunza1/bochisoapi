@@ -36,7 +36,6 @@ class BscTargetsController extends Controller
         $type = $request->type; // 1 get tiêu chí cha. 2 get tiêu chí con và cha.
         $topicId = $request->topic_id;
         if ($type == 1) {
-
             $topic = BscTopics::find($topicId)->with('targets')->get();
         } else {
 
