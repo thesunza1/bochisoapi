@@ -20,7 +20,6 @@ class enableCros
             // ->header('Access-Control-Allow-Origin', ['113.164.176.24:80', '127.0.0.1:80'])
             ->header('Access-Control-Allow-Origin', '*')
             ->header('Access-Control-Allow-Methods', '*')
-            ->header('Access-Control-Allow-Credentials', 'true')
-            ->header('Access-Control-Allow-Hearders', ['X-CSRF-Token', 'Content-Type' , 'Authorization']);
+            ->header('Access-Control-Allow-Hearders', '*');
     }
 }
