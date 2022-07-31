@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('createwiththis', [BscTargetsController::class, 'createWithThis']);
         Route::post('getwithtopic', [BscTargetsController::class, 'getWithTopic']);
         Route::post('update', [BscTargetsController::class, 'update']);
+        Route::post('create', [BscTargetsController::class, 'create']);
         Route::post('', [BscTargetsController::class, 'index']);
     });
     Route::prefix('setindicators')->group(function () {
