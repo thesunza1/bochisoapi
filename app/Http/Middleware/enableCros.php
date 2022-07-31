@@ -18,8 +18,9 @@ class enableCros
     {
         return $next($request)
             // ->header('Access-Control-Allow-Origin', ['113.164.176.24:80', '127.0.0.1:80'])
+            ->header('Accept', '*/*')
             ->header('Access-Control-Allow-Origin', '*')
-            ->header('Access-Control-Allow-Methods', '*')
+            ->header('Access-Control-Allow-Methods', 'GET,POST')
             ->header('Access-Control-Allow-Hearders', '*');
     }
 }
