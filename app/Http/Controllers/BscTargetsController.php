@@ -55,8 +55,10 @@ class BscTargetsController extends Controller
     {
         $parentId =  $request->parent_id == -1 ? null : $request->parent_id;
         $name = $request->name;
+        $username = $request->user()->username;
         $comment = $request->comment;
         $topicId = $request->topic_id;
+        $order = $request->order;
         //get id target first
         $targetIdFirst = BscTargets::where('topic_id', $topicId)->first()->id;
         //create new target
@@ -64,51 +66,82 @@ class BscTargetsController extends Controller
             'name' => $name,
             'comment' => $comment,
             'target_id' => $parentId,
+            'created_at' => now(),
+            'username_created' =>  $username,
+            'order' => $order,
         ]);
         // find array unit_id use topic use target id
         $year = now()->year;
         $year_set = new Carbon('01-01-' . $year);
         $year_set->format('d-M-y');
 
-        $unitIdArr = BscSetIndicators::select('id')->distinct()
-            ->whereDate('year_set', $year)
+        $unitIdArr = BscSetIndicators::select('unit_id')->distinct()
+            ->whereDate('year_set', $year_set->toDateString())
             ->whereNull('month_set')
             ->where('target_id', $targetIdFirst)
-            ->pluck('id');
+            ->pluck('unit_id');
 
+        //  DB::transaction(function () use ($unitIdArr, $target, $year, $parentId, $username) {
+        $arr = [];
         foreach ($unitIdArr as $unitId) {
             for ($i = 0; $i <= 12; $i++) {
-                BscTargetsController::addToMonth($i, $target->id, $unitId, $year, $parentId);
+                $monthSet = null;
+                if ($i > 0) {
+                    $monthSet = new Carbon('01-' . $i . '-' . $year);
+                    $monthSet->format('d-M-y');
+                }
+                $siId = null;
+                $yearSet = new Carbon('01-01-' . $year);
+                $yearSet->format('d-M-y');
+                if ($parentId !== null) {
+                    if ($monthSet == null) {
+                        $parentIdSetIndicator = BscSetIndicators::whereDate('year_set', $yearSet->toDateString())
+                            ->where('unit_id', $unitId)
+                            ->where('target_id', $parentId)
+                            ->whereNull('month_set')->get();
+                    } else {
+                        $parentIdSetIndicator = BscSetIndicators::whereDate('year_set', $yearSet->toDateString())
+                            ->where('unit_id', $unitId)
+                            ->where('target_id', $parentId)
+                            ->whereDate('month_set', $monthSet->toDateString())->get();
+                        if (count($parentIdSetIndicator) == 0) {
+                            array_push($arr, [$unitId, $parentId, $monthSet->toDateString(), $i]);
+                        } else {
+                            $siId = $parentIdSetIndicator[0]->id;
+                        }
+                    }
+                }
+
+                BscTargetsController::addToMonth($i, $target->id, $unitId, $year, $parentId, $username, $siId);
             }
         }
+        // });
 
-        return response()->json(['statuscode' => 1]);
+        return response()->json([
+            'statuscode' => 1,
+            'arr' => $arr,
+        ]);
     }
 
-    public static function  addToMonth($month, $targetId, $unitId, $year, $parentId)
+    public  function getParentId($month, $unitId, $year, $parentId)
+    {
+    }
+    public static function  addToMonth($month, $targetId, $unitId, $year, $parentId, $username, $siId)
     {
         $monthSet = null;
         if ($month > 0) {
             $monthSet = new Carbon('01-' . $month . '-' . $year);
             $monthSet->format('d-M-y');
         }
-        $parentIdSetIndicator = null;
         $yearSet = new Carbon('01-01-' . $year);
         $yearSet->format('d-M-y');
-        if ($parentId !== null) {
-            $parentIdSetIndicator = BscSetIndicators::whereDate('year_set', $yearSet)
-                ->where('unit_id', $unitId)
-                ->where('target_id', $targetId);
-            if ($monthSet == null) $parentIdSetIndicator->whereNull('month_set');
-            else $parentIdSetIndicator->whereDate('month_set', $monthSet);
-            $parentIdSetIndicator = $parentIdSetIndicator->first()->id;
-        }
         $data = [
             'month_set' => $monthSet,
             'year_set' => $yearSet,
             'unit_id' => $unitId,
             'target_id' => $targetId,
-            'set_indicator_id' => $parentIdSetIndicator
+            'set_indicator_id' => $siId,
+            'username_created' => $username,
         ];
         BscSetIndicators::insert($data);
     }

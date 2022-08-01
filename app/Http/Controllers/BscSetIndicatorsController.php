@@ -100,7 +100,7 @@ class BscSetIndicatorsController extends Controller
             };
         } else {
             $monthSet = new Carbon('01-' . $month . '-' . $year);
-            $yearSet = new Carbon('01-' . $month . '-' . $year);
+            $yearSet = new Carbon('01-01-' . $year);
             $monthSet->format('d-M-y');
             $yearSet->format('d-M-y');
             for ($i = 0; $i < count($topicIdArr); $i++) {
@@ -240,7 +240,7 @@ class BscSetIndicatorsController extends Controller
             $month = $request->month == null ? Carbon::now()->month : $request->month;
             $year = $request->year == null ? Carbon::now()->year : $request->year;
             $monthset = "$year" . '-' . "$month" . '-01';
-            $yearset = "$year" . '-' . "$month" . '-01';
+            $yearset = "$year" . '-01-01';
             $month = new Carbon($monthset);
             $month->format('d-M-y');
             $year = new Carbon($yearset);
@@ -285,7 +285,7 @@ class BscSetIndicatorsController extends Controller
             $month =  '01';
             $year = $request->year == null ? Carbon::now()->year : $request->year;
             $monthset = null;
-            $yearset = "$year" . '-' . "$month" . '-01';
+            $yearset = "$year" . '-01-01';
             $year = new Carbon($yearset);
             $year->format('d-M-y');
             $month = null;
