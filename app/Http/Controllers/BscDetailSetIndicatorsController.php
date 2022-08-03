@@ -21,11 +21,9 @@ class BscDetailSetIndicatorsController extends Controller
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         $month = now()->firstOfMonth();
         $month->format('d-M-y');
-        $year = $month;
-        // $month = new Carbon('2022/06/01');
-        // $year = new Carbon('2022/06/01');
-        // $mt = $month->format('d-M-y');
-        // $yt = $year->format('d-M-y');
+        $numYear = now()->year;
+        $year = new Carbon('01-01-'.$numYear);
+        $year->format('d-M-y');
         $username = $request->user()->username;
         if ($request->unit_id !== -1 && $request->unit_id !== null) {
             $unitId = $request->unit_id;
@@ -42,8 +40,8 @@ class BscDetailSetIndicatorsController extends Controller
             return $this->index_year($request, $unitId);
         }
         $unit = BscUnits::find($unitId);
-        $now = Carbon::now();
-        $n = $now->format('d-M-y');
+        $now = new Carbon(now()->day.'-'.now()->month.'-'.now()->year);
+         $now->format('d-M-y');
         $a = 1;
         // return [$month->toDateString(),  $year->toDateString(), $unitId , $now];
         $detailSetIndicators = BscSetIndicators::where('unit_id', $unitId)->whereDate('month_set', $month->toDateString())
@@ -160,12 +158,9 @@ class BscDetailSetIndicatorsController extends Controller
             $month = Carbon::now()->firstOfMonth();
             $month->format('y-M-y');
         }
-        $year = $month;
-        // $mt = $month->format('d-M-y');
-        // $year = new Carbon('2022/06/01');
-        // $yt = $year->format('d-M-y');
+        $year = new Carbon('01-01-'.now()->year) ;
+        $year->format('d-M-y');
         $now = now();
-        // $username = $request->user()->username;
         DB::transaction(function () use ($month, $year, $now, $username, $unitId) {
             $setIndicators = BscSetIndicators::where('unit_id', $unitId)
                 ->whereDate('month_set', $month->toDateString())
@@ -183,11 +178,7 @@ class BscDetailSetIndicatorsController extends Controller
     public function createYear($username, $unitId = 1, $year = null )
     {
         date_default_timezone_set('Asia/Ho_Chi_Minh');
-        // $mt = $month->format('d-M-y');
-        // $year = new Carbon('2022/06/01');
-        // $yt = $year->format('d-M-y');
         $now = now();
-        // $username = $request->user()->username;
         DB::transaction(function () use ( $year, $now, $username, $unitId) {
             $setIndicators = BscSetIndicators::where('unit_id', $unitId)
                 ->whereNull('month_set')

@@ -119,7 +119,6 @@ class BscTargetsController extends Controller
 
         return response()->json([
             'statuscode' => 1,
-            'arr' => $arr,
         ]);
     }
 
