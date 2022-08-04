@@ -26,25 +26,38 @@ class BscSetIndicatorsController extends Controller
         //create bcs with name , month, unit, year
         //add bcs with bcs with id taget,
     }
-
+    //id , plan , type : 1: plan for set, 2:red warring, 3: organ planing
     public function update(Request $request)
     {
+        $type = $request->type;
+        $value = $request->plan;
         $plan = BscSetIndicators::find($request->id);
-        $plan->plan = $request->plan;
+        if ($type == 1 || $type == null) {
+            $plan->plan = $value;
+        } else
+        if ($type == 2) {
+            $plan->min_warning = $value;
+        } else if ($type == 3) {
+            $plan->plan_warning = $value;
+        } else if ($type == 4) {
+            $plan->active = $value;
+        }
         $plan->save();
-        if ($plan->month_set == null) {
-            $year = new Carbon($plan->year_set);
-            $year->format('d-M-y');
-            $year->year;
-            $month = now()->month;
-            $unit_id = $plan->unit_id;
-            for ($i = 1; $i <= $month; $i++) {
-                $yearSet = new Carbon('01-' . $i . '-' . $year);
-                $sis = BscSetIndicators::whereDate('year_set', $yearSet->toDateString())->where('unit_id', $unit_id)->get();
-                if ($sis->count() > 0) {
-                    foreach ($sis as $si) {
-                        $si->year_plan = $request->plan;
-                        $si->save();
+        if ($type == 1 || $type == null) {
+            if ($plan->month_set == null) {
+                $year = new Carbon($plan->year_set);
+                $year->format('d-M-y');
+                $year->year;
+                $month = now()->month;
+                $unit_id = $plan->unit_id;
+                for ($i = 1; $i <= $month; $i++) {
+                    $yearSet = new Carbon('01-' . $i . '-' . $year);
+                    $sis = BscSetIndicators::whereDate('year_set', $yearSet->toDateString())->where('unit_id', $unit_id)->get();
+                    if ($sis->count() > 0) {
+                        foreach ($sis as $si) {
+                            $si->year_plan = $request->plan;
+                            $si->save();
+                        }
                     }
                 }
             }
