@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('createwithtopic', [BscTargetsController::class, 'createWithTopic']);
         Route::post('createwiththis', [BscTargetsController::class, 'createWithThis']);
         Route::post('getwithtopic', [BscTargetsController::class, 'getWithTopic']);
+        Route::post('getwithparent', [BscTargetsController::class, 'getWithParent']);
         Route::post('update', [BscTargetsController::class, 'update']);
         Route::post('create', [BscTargetsController::class, 'create']);
         Route::post('', [BscTargetsController::class, 'index']);

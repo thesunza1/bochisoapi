@@ -21,6 +21,19 @@ class BscTargetsController extends Controller
             'targets' => $targets
         ]);
     }
+
+
+    public function getWithParent(Request $request) {
+        $targetId = $request->id ;
+
+        $target = BscTargets::where('target_id' , $targetId)->orderBy('order')->get();
+
+
+        return response()->json([
+            'statuscode' => 1,
+            'targets' => $target,
+        ]);
+    }
     public function getWithArrTopic(Request $request)
     {
         $topicStr = $request->topics;
