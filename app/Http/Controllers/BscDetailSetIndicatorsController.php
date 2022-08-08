@@ -18,7 +18,6 @@ class BscDetailSetIndicatorsController extends Controller
     //
     public function index(Request $request)
     {
-        date_default_timezone_set('Asia/Ho_Chi_Minh');
         $month = now()->firstOfMonth();
         $month->format('d-M-y');
         $numYear = now()->year;
@@ -54,7 +53,7 @@ class BscDetailSetIndicatorsController extends Controller
         //get arr topic_id from arr set_indicator.
         $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
         //get topic from topic_id array -> with all chitieu.
-        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
             ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
                 $q->where('username', $request->user()->username);
             }])
@@ -81,11 +80,11 @@ class BscDetailSetIndicatorsController extends Controller
             'detailSetIndicators' => $detailSetIndicators,
             'topics' => $topics,
             'unit' => $unit,
+            'day' => now()->hour.':'.now()->minute,
         ]);
     }
     public function index_year(Request $request,  $uuId )
     {
-        date_default_timezone_set('Asia/Ho_Chi_Minh');
         $year = Carbon::now()->year;
         $year = new Carbon('01/01/'.$year);
         $year->format('d-M-y');
@@ -116,7 +115,7 @@ class BscDetailSetIndicatorsController extends Controller
         ->whereIn('set_indicator_id', $arrSetIndicatorid)
         ->distinct()->pluck('topic_id');
         //get topic from topic_id array -> with all chitieu.
-        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)
+        $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
             ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
                 $q->where('username', $request->user()->username);
             }])
