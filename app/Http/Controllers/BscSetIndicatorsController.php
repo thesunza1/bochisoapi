@@ -266,11 +266,12 @@ class BscSetIndicatorsController extends Controller
                 ->where('active', 1)
                 ->orderBy('target_id')
                 ->pluck('target_id');
-            // return [$month->toDateString(),$year->toDateString()];
             $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
             // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
             //get arr topic_id from arr set_indicator.
-            $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
+            $arrTopicId = BscTargets::select('topic_id')->whereIn('id', $targetArrId)->whereNotNull('topic_id')->distinct()->pluck('topic_id');
+            // $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
+            // return [$arrTopicId , $arrSetIndicatorid];
             //get topic from topic_id array -> with all chitieu.
             // $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
             //     ->with(['targets.targetUpdates' => function ($q) use ($request) {
@@ -300,7 +301,9 @@ class BscSetIndicatorsController extends Controller
             //                 }]);
             //         }
             //     ])->get();
-            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')->has('targets')
+            // return response()->json($arrTopicId);
+
+            $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
                 ->with(['targets' => function ($q) use ($request, $year, $month, $unit_id, $targetArrId) {
                     $q->whereIn('id', $targetArrId)
                         ->with(['targetUpdates' => function ($q) use ($request) {
@@ -311,14 +314,14 @@ class BscSetIndicatorsController extends Controller
                                 ->with(['targetUpdates' => function ($q) use ($request) {
                                     $q->where('username', $request->user()->username);
                                 }])
-                                ->with(['setindicators' => function ($q) use ($request, $year, $month, $unit_id, $targetArrId) {
+                                ->with(['setindicators' => function ($q) use ($year, $month, $unit_id) {
                                     $q->where('unit_id', $unit_id)
                                         ->whereDate('year_set', $year->toDateString())
                                         ->whereDate('month_set', $month->toDateString())
                                         ->with(['detailSetIndicator' => function ($q) {
                                             $q->select('users.name', 'bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
                                         }]);
-                                }]);
+                                }])->orderBy('order');
                         }])
                         ->with(['setindicators' => function ($q) use ($year, $month, $unit_id) {
                             $q->where('unit_id', $unit_id)
@@ -327,8 +330,9 @@ class BscSetIndicatorsController extends Controller
                                 ->with(['detailSetIndicator' => function ($q) {
                                     $q->select('users.name', 'bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
                                 }]);
-                        }]);;
+                        }])->orderBy('order');
                 }])->get();
+
         } else {
             $month =  '01';
             $year = $request->year == null ? Carbon::now()->year : $request->year;
@@ -337,8 +341,6 @@ class BscSetIndicatorsController extends Controller
             $year = new Carbon($yearset);
             $year->format('d-M-y');
             $month = null;
-
-
 
             $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereNull('month_set')->whereDate('year_set', $year->toDateString())->pluck('id');
             // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
