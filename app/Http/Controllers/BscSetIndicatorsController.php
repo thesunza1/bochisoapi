@@ -249,27 +249,65 @@ class BscSetIndicatorsController extends Controller
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         $unit_id = $request->unit_id == null ? $units[0]->id : $request->unit_id;
         $unit = BscUnits::find($unit_id);
+        $type = $request->type == null ? 0 : $request->type;
+        $year = $request->year == null ? Carbon::now()->year : $request->year;
         if ($request->month <> 13) {
             $month = $request->month == null ? Carbon::now()->month : $request->month;
-            $year = $request->year == null ? Carbon::now()->year : $request->year;
             $monthset = "$year" . '-' . "$month" . '-01';
-            $yearset = "$year" . '-01-01';
             $month = new Carbon($monthset);
             $month->format('d-M-y');
-            $year = new Carbon($yearset);
-            $year->format('d-M-y');
-            $targetArrId = BscSetIndicators::select('target_id')
-                ->distinct()
-                ->whereDate('year_set', $yearset)
-                ->whereDate('month_set', $monthset)
-                ->where('unit_id', $unit_id)
-                ->where('active', 1)
-                ->orderBy('target_id')
-                ->pluck('target_id');
-            $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
-            // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
+        } else {
+            $month = '01';
+            $month = null;
+        }
+        $yearset = "$year" . '-01-01';
+        $year = new Carbon($yearset);
+        $year->format('d-M-y');
+        $targetArrId = BscSetIndicators::select('target_id')
+            ->distinct()
+            ->whereDate('year_set', $yearset)
+            ->where('unit_id', $unit_id);
+        if ($month == null) {
+            $targetArrId->whereNull('month_set');
+        } else {
+            $targetArrId->whereDate('month_set', $monthset);
+        };
+        if ($type == 0) {
+            $targetArrId = $targetArrId
+                ->where('active', 1);
+        }
+        $targetArrId = $targetArrId
+            ->orderBy('target_id')
+            ->pluck('target_id');
+        $arrTopicId = BscTargets::select('topic_id')->whereIn('id', $targetArrId)->whereNotNull('topic_id')->distinct()->pluck('topic_id');
+        if ($request->month <> 13) {
+            // $month = $request->month == null ? Carbon::now()->month : $request->month;
+            // $year = $request->year == null ? Carbon::now()->year : $request->year;
+            // $monthset = "$year" . '-' . "$month" . '-01';
+            // $yearset = "$year" . '-01-01';
+            // $month = new Carbon($monthset);
+            // $month->format('d-M-y');
+            // $year = new Carbon($yearset);
+            // $year->format('d-M-y');
+
+            // $targetArrId = BscSetIndicators::select('target_id')
+            //     ->distinct()
+            //     ->whereDate('year_set', $yearset)
+            //     ->whereDate('month_set', $monthset)
+            //     ->where('unit_id', $unit_id);
+            // if ($type == 0) {
+            //     $targetArrId = $targetArrId
+            //         ->where('active', 1);
+            // }
+            // $targetArrId = $targetArrId
+            //     ->orderBy('target_id')
+            //     ->pluck('target_id');
+
+            // $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereDate('month_set', $month->toDateString())->whereDate('year_set', $year->toDateString())->pluck('id');
             //get arr topic_id from arr set_indicator.
-            $arrTopicId = BscTargets::select('topic_id')->whereIn('id', $targetArrId)->whereNotNull('topic_id')->distinct()->pluck('topic_id');
+
+            // $arrTopicId = BscTargets::select('topic_id')->whereIn('id', $targetArrId)->whereNotNull('topic_id')->distinct()->pluck('topic_id');
+
             // $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
             // return [$arrTopicId , $arrSetIndicatorid];
             //get topic from topic_id array -> with all chitieu.
@@ -332,53 +370,93 @@ class BscSetIndicatorsController extends Controller
                                 }]);
                         }])->orderBy('order');
                 }])->get();
-
         } else {
-            $month =  '01';
-            $year = $request->year == null ? Carbon::now()->year : $request->year;
-            $monthset = null;
-            $yearset = "$year" . '-01-01';
-            $year = new Carbon($yearset);
-            $year->format('d-M-y');
-            $month = null;
+            // $month =  '01';
+            // $year = $request->year == null ? Carbon::now()->year : $request->year;
+            // $monthset = null;
+            // $yearset = "$year" . '-01-01';
+            // $year = new Carbon($yearset);
+            // $year->format('d-M-y');
+            // $month = null;
 
-            $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereNull('month_set')->whereDate('year_set', $year->toDateString())->pluck('id');
+            // $arrSetIndicatorid = BscSetIndicators::where('unit_id', $unit_id)->whereNull('month_set')->whereDate('year_set', $year->toDateString())->pluck('id');
+
             // $arrSetIndicatorid = BscSetIndicators::where('unit_id', 1)->where('year_set', $month)->where('month_set', $month)->pluck('id');
             //get arr topic_id from arr set_indicator.
-            $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
+
+            // $arrTopicId =  BscTopicOrders::select('topic_id')->whereIn('set_indicator_id', $arrSetIndicatorid)->distinct()->pluck('topic_id');
+
             //get topic from topic_id array -> with all chitieu.
+            // $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
+            //     ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
+            //         $q->where('username', $request->user()->username);
+            //     }])
+            //     ->with(['targets.targetUpdates' => function ($q) use ($request) {
+            //         $q->where('username', $request->user()->username);
+            //     }])
+            //     ->with([
+            //         'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
+            //             $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at', 'year_set', 'month_set', 'min_warning')
+            //                 ->where('unit_id', $unit_id)
+            //                 ->whereDate('year_set', $year->toDateString())
+            //                 ->whereNull('month_set')
+            //                 ->with(['detailSetIndicator' => function ($q) {
+            //                     $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+            //                 }]);
+            //         }
+            //     ])->with([
+            //         'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
+            //             $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at', 'year_set', 'month_set', 'min_warning')
+            //                 ->where('unit_id', $unit_id)
+            //                 ->whereDate('year_set', $year->toDateString())
+            //                 ->whereNull('month_set')
+            //                 ->with(['detailSetIndicator' => function ($q) {
+            //                     $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+            //                 }]);
+            //         }
+            //     ])->get();
+
+            $targetArrId = BscSetIndicators::select('target_id')
+                ->distinct()
+                ->whereDate('year_set', $yearset)
+                ->whereNull('month_set')
+                ->where('unit_id', $unit_id)
+                ->where('active', 1)
+                ->orderBy('target_id')
+                ->pluck('target_id');
+
+            $arrTopicId = BscTargets::select('topic_id')->whereIn('id', $targetArrId)->whereNotNull('topic_id')->distinct()->pluck('topic_id');
+
             $topics = BscTopics::select('id', 'name')->whereIn('id', $arrTopicId)->orderBy('id')
-                ->with(['targets.targets.targetUpdates' => function ($q) use ($request) {
-                    $q->where('username', $request->user()->username);
-                }])
-                ->with(['targets.targetUpdates' => function ($q) use ($request) {
-                    $q->where('username', $request->user()->username);
-                }])
-                ->with([
-                    'targets.setindicators' => function ($query) use ($request, $year,  $month, $unit_id) {
-                        $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at', 'year_set', 'month_set', 'min_warning')
-                            ->where('unit_id', $unit_id)
-                            ->whereDate('year_set', $year->toDateString())
-                            ->whereNull('month_set')
-                            ->with(['detailSetIndicator' => function ($q) {
-                                $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
-                            }]);
-                    }
-                ])->with([
-                    'targets.targets.setindicators' => function ($query) use ($request, $year, $month, $unit_id) {
-                        $query->select('id', 'set_indicator_id', 'target_id', 'active', 'total_plan', 'plan', 'year_plan', 'plan_warning', 'updated_at', 'year_set', 'month_set', 'min_warning')
-                            ->where('unit_id', $unit_id)
-                            ->whereDate('year_set', $year->toDateString())
-                            ->whereNull('month_set')
-                            ->with(['detailSetIndicator' => function ($q) {
-                                $q->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
-                            }]);
-                    }
-                ])->get();
+                ->with(['targets' => function ($q) use ($request, $year, $month, $unit_id, $targetArrId) {
+                    $q->whereIn('id', $targetArrId)
+                        ->with(['targetUpdates' => function ($q) use ($request) {
+                            $q->where('username', $request->user()->username);
+                        }])
+                        ->with(['targets' => function ($q) use ($request, $year, $month, $unit_id, $targetArrId) {
+                            $q->whereIn('id', $targetArrId)
+                                ->with(['targetUpdates' => function ($q) use ($request) {
+                                    $q->where('username', $request->user()->username);
+                                }])
+                                ->with(['setindicators' => function ($q) use ($year, $month, $unit_id) {
+                                    $q->where('unit_id', $unit_id)
+                                        ->whereDate('year_set', $year->toDateString())
+                                        ->whereNull('month_set')
+                                        ->with(['detailSetIndicator' => function ($q) {
+                                            $q->select('users.name', 'bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+                                        }]);
+                                }])->orderBy('order');
+                        }])
+                        ->with(['setindicators' => function ($q) use ($year, $month, $unit_id) {
+                            $q->where('unit_id', $unit_id)
+                                ->whereDate('year_set', $year->toDateString())
+                                ->whereNull('month_set')
+                                ->with(['detailSetIndicator' => function ($q) {
+                                    $q->select('users.name', 'bsc_detail_set_indicators.*')->join('users', 'bsc_detail_set_indicators.username_updated', 'users.username');
+                                }]);
+                        }])->orderBy('order');
+                }])->get();
         }
-
-
-
         return response()->json([
             'statuscode' => 1,
             'topics' => $topics,

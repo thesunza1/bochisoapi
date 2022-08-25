@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('detailsetindicators')->group(function () {
         Route::post('', [BscDetailSetIndicatorsController::class, 'index']);
         Route::post('update', [BscDetailSetIndicatorsController::class, 'update']);
+
     });
 });
 Route::prefix('user')->group(function () {
