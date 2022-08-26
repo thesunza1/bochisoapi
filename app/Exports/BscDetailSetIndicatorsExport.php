@@ -25,7 +25,7 @@ class BscDetailSetIndicatorsExport implements FromView
 
     function __construct($month, $year, $unitId)
     {
-        if ($month == -1) {
+        if ($month == -1 || $month == 13) {
             $vMonth = '01';
             $this->asYear = 1;
         } else {
@@ -46,7 +46,8 @@ class BscDetailSetIndicatorsExport implements FromView
             'topics' => $topic,
             'monthset' => $this->monthSet,
             'unit' => BscUnits::find($this->unitId),
-            'nowdate' => now()->format('d-m-Y')
+            'nowdate' => now()->format('d-m-Y'),
+            'asyear' => $this->asYear
         ]);
     }
 
@@ -67,14 +68,15 @@ class BscDetailSetIndicatorsExport implements FromView
         $asYear = $this->asYear;
         $topic = BscTopics::whereIn('id', $arrTopicId)->orderBy('id')
             ->with(['targets' => function ($q) use ($targetArrayId, $unitId, $monthSet, $yearSet, $asYear) {
-                $q->whereIn('id', $targetArrayId)
+                $q->whereIn('id', $targetArrayId)->orderBy('order')
                     ->with(['setindicators' => function ($q) use ( $unitId, $monthSet, $yearSet, $asYear) {
                         $q->where('unit_id', $unitId)
                             ->whereDate('year_set', $yearSet->toDateString());
                         $asYear == 1 ? $q->whereNull('month_set') : $q->whereDate('month_set', $monthSet->toDateString());
                     }])
                     ->with(['targets' => function ($q) use ($targetArrayId, $unitId, $monthSet, $yearSet, $asYear) {
-                        $q->whereIn('id', $targetArrayId)->with(['setindicators' => function ($q) use ( $unitId, $monthSet, $yearSet, $asYear) {
+                        $q->whereIn('id', $targetArrayId)->orderBy('order')
+                        ->with(['setindicators' => function ($q) use ( $unitId, $monthSet, $yearSet, $asYear) {
                             $q->where('unit_id', $unitId)
                                 ->whereDate('year_set', $yearSet->toDateString());
                             $asYear == 1 ? $q->whereNull('month_set') : $q->whereDate('month_set', $monthSet->toDateString());
