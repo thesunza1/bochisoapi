@@ -12,18 +12,19 @@
     <table>
         <thead>
             <tr>
+                @if ($asyear == 1)
+
+                <th colspan="7" style="text-align: center; font-weight: bold; font-size: 14px"> {{ $unit->name }} {{ ',
+                     Cả năm '.$monthset->year }}</th>
+                @else
                 <th colspan="7" style="text-align: center; font-weight: bold; font-size: 14px"> {{ $unit->name }} {{ ',
                     tháng '.$monthset->month.' năm '.$monthset->year }}</th>
+                @endif
+
             </tr>
             <tr>
                 <th style="text-align: right" colspan="2"> NGÀY XUẤT DỮ LIỆU: </th>
-                @if ($asyear == 1)
-
-                <th style="color: red ; font-weight: bold" colspan="8"> Toàn năm {{ now()->year }}</th>
-                @else
-
                 <th style="color: red ; font-weight: bold" colspan="8"> {{ $nowdate }}</th>
-                @endif
             </tr>
             <tr></tr>
             <tr>
